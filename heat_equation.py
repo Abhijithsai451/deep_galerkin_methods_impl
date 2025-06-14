@@ -2,6 +2,7 @@ import torch
 from torch import nn
 
 from NeuralNetwork import NeuralNetwork
+from sampling import generate_pde_points, generate_ic_points, generate_bc_points
 
 
 class HeatEquation:
@@ -57,8 +58,8 @@ class HeatEquation:
         :return: The PDE residual
 
         """
-        spatial_coord.requires_grad = True
-        time_coord.requires_grad = True
+        spatial_coord.requires_grad_(True)
+        time_coord.requires_grad_(True)
 
         u = self.predict(spatial_coord, time_coord)
         # Computing the First derivative with respect to time
@@ -69,10 +70,11 @@ class HeatEquation:
         for i in range(self.spatial_dimension):
             coord_i = spatial_coord[:, i:i+1]
 
-            # Compute 1 st derivative wrt x_i (du/dx_i)
-            u_i = torch.autograd.grad(u_xx_sum, coord_i, grad_outputs=torch.ones_like(u), create_graph=True,
+            # Compute 1st derivative wrt x_i (du/dx_i)
+            u_i = torch.autograd.grad(u, coord_i, grad_outputs=torch.ones_like(u), create_graph=True,
                                       retain_graph=True)[0]
-            u_ii = torch.autograd.grad(u_i, coord_i, grad_outputs=torch.ones_like(u), create_graph=True)[0]
+            # Compute 2nd derivative with respect to x_i (d2u/dx_i^2)
+            u_ii = torch.autograd.grad(u_i, coord_i, grad_outputs=torch.ones_like(u_i), create_graph=True)[0]
 
             u_xx_sum += u_ii
 
@@ -113,16 +115,16 @@ class HeatEquation:
         loss_bc = torch.mean((u_pred_bc - U_bc)**2)
 
         total_loss = loss_pde + loss_ic + loss_bc
-        return total_loss, pde_res, loss_pde, loss_ic, loss_bc
+        return total_loss, loss_pde, loss_ic, loss_bc
 
-    def train(self, alpha, domain_bound, time_bound, ini_cond, bound_cond, num_pde_points,
+    def train(self, alpha, domain_bound, time_bound, num_pde_points,
               num_ic_points, num_bc_points, epochs, learning_rate):
         """
         :param alpha: Thermal Diffisivity
         :param domain_bound: List of [min, max] for each spatial dimension,
                                   e.g., [[0.0, 1.0]] for 1D, [[0.0, 1.0], [0.0, 1.0]] for 2D.
         :param time_bound (list): [start_time, end_time].
-        :param ini_cond (callable): Function u0(coords_spatial) returning initial values.
+        :param ini_cond (callable): Function u0(spatial_coord) returning initial values.
         :param bound_cond: Function u_b(coords_spatial, t) returning boundary values.
         :param num_pde_points: Number of sampling points for PDE residual
         :param num_ic_points: Number of sampling points for Initial Conditions
@@ -135,6 +137,32 @@ class HeatEquation:
         self.time_bounds = time_bound
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+
+        print(f"\n--- Training DGM for {self.spatial_dimension}D Heat Equation on {self.device} ---")
+        for epoch in range(epochs):
+            x_pde , t_pde = generate_pde_points(num_pde_points,domain_bound,time_bound)
+            x_ic , u0_ic = generate_ic_points(num_ic_points,domain_bound)
+            x_bc, t_bc, u_bc = generate_bc_points(num_bc_points,domain_bound,time_bound,self.spatial_dimension)
+
+            optimizer.zero_grad()
+
+            total_loss , loss_pde, loss_ic, loss_bc = self.compute_loss(
+                                alpha,
+                                x_pde,t_pde,
+                                x_ic,u0_ic,
+                                x_bc, t_bc, u_bc
+                                )
+
+            total_loss.backward()
+            optimizer.step()
+
+            if epoch % (epochs//10 if epochs >10 else 1) == 0 or epochs == epochs -1:
+                print(f"Epoch {epoch}/{epochs}: Total Loss={total_loss.item():.4e}, PDE Loss={loss_pde.item():.4e},"
+                      f" IC Loss={loss_ic.item():.4e}, BC Loss={loss_bc.item():.4e}")
+        print("Training Finished")
+
+
+
 
 
 

@@ -1,11 +1,16 @@
+import numpy as np
 import torch
 from torch import device
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 
-def initial_condition(param):
-    pass
+def initial_condition(spatial_coord):
+    x = spatial_coord[:,0:1]
+    return torch.sin(torch.pi*x)
+
+def boundary_condition(spatial_coord, t):
+    return torch.zeros_like(t)
 
 def generate_random_points(num_points, bounds):
     # Generates random points
@@ -18,11 +23,82 @@ def generate_random_points(num_points, bounds):
 def generate_pde_points(num_points, domain_bound, time_bound):
     # Generate random spatial and time points for PDE residual calculation
     spatial_coords = generate_random_points(num_points, domain_bound)
-    t = (torch.rand((num_points,1),dtype=torch.float32) * (time_bound[1] - time_bound[0])+ time_bound[0]).to(device)
+    t = (torch.rand((num_points, 1), dtype=torch.float32) * (time_bound[1] - time_bound[0]) +
+         time_bound[0]).to(device)
 
     return spatial_coords, t
 
-def generate_ic_points(num_points, domain_bound, time_bound):
+def generate_ic_points(num_points, domain_bound):
     # Generates the random spatial points for initial conditions at t = time_bound[0]
     spatial_coords = generate_random_points(num_points, domain_bound)
     u0_ic = initial_condition(spatial_coords.cpu()).to(device)
+    return spatial_coords, u0_ic
+
+
+def generate_bc_points(num_points, domain_bound, time_bound, spatial_dimension):
+    """
+    1. Calculate the number of faces (num_faces) and points per face (points_per_face) by integer division.
+    2. For each spatial dimension d:
+        a. For the min face (e.g., x_d = xmin):
+            - For each coordinate i:
+            - If i == d, set the coordinate to the min value (domain_bounds[i][0]) for all points on this face.
+            - Otherwise, sample randomly in the range [domain_bounds[i][0], domain_bounds[i][1]].
+            - Also, for the time coordinate, sample randomly in [time_bounds[0], time_bounds[1]] for each point on this face.
+        b. Similarly for the max face (e.g., x_d = xmax).
+    3. After processing all faces, we might have a total of (points_per_face * num_faces) points, which may be less than `num_points`.
+        So, if there are remaining points, we generate them randomly in the entire spatial domain (and time randomly as well) and add them.
+    4. If we have generated more points (due to integer division), we truncate to `num_points`.
+    5. Then, we evaluate the boundary condition function (boundary_condition_func) at these points to get the boundary values (U_bc_vals).
+    Note: The function `generate_random_points_in_box` is used to generate the extra points in the spatial domain.
+    """
+
+
+    # Generates random points on the boundaries.
+    all_x_bc = []
+    all_t_bc = []
+    num_faces = 2 * spatial_dimension
+    points_per_face = num_points // num_faces
+
+    for d in range(spatial_dimension):
+        # Minimum face for dimension
+        coord_min_face = []
+        for i in range(spatial_dimension):
+            if i == d:
+                coord_min_face.append(torch.ones((points_per_face,1),dtype=torch.float32) * domain_bound[i][0])
+            else:
+                coord_min_face.append(torch.rand((points_per_face,1),dtype=torch.float32) *
+                                      (domain_bound[i][1]-domain_bound[i][0])+ domain_bound[i][0])
+        all_x_bc.append(torch.cat(coord_min_face, dim =1))
+        all_t_bc.append(torch.rand((points_per_face,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0])
+
+        # Maximum face for dimension
+        coord_max_face = []
+        for i in range(spatial_dimension):
+            if i == d:
+                coord_max_face.append(torch.ones((points_per_face,1),dtype=torch.float32) *domain_bound[i][1])
+            else:
+                coord_max_face.append(torch.rand((points_per_face,1),dtype=torch.float32) *(domain_bound[i][1]-domain_bound[i][0])
+                                      +domain_bound[i][0])
+        all_x_bc.append(torch.cat(coord_max_face, dim =1))
+        all_x_bc.append(torch.rand((points_per_face,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0])
+
+    X_bc = torch.cat(all_x_bc, dim =0).to(device)
+    T_bc = torch.cat(all_t_bc, dim =0).to(device)
+
+    if X_bc.shape[0] <num_points:
+        remaining_points = num_points - X_bc.shape[0]
+        X_extra = generate_random_points(remaining_points, domain_bound)
+        T_extra = (torch.rand((remaining_points,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0]).to(device)
+
+        X_bc = torch.cat([X_bc, X_extra], dim =0)
+        T_bc = torch.cat([T_bc, T_extra], dim =0)
+    elif X_bc.shape[0] > num_points:
+        X_bc = X_bc[:num_points]
+        T_bc = T_bc[:num_points]
+
+    U_bc = boundary_condition(X_bc.cpu(), T_bc.cpu()).to(device)
+
+    return X_bc, T_bc, U_bc
+def analytic_func(x,t, alpha):
+    soln = np.exp(-alpha * np.pi**2 * t)*np.sin(np.pi*x)
+    return soln
