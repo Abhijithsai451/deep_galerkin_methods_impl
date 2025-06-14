@@ -1,0 +1,8 @@
+# TODO : List of Items for implementation
+
+1. Generate the sample points X_n of Domain and Z_n of Boundary
+2. At Random points T_n we compute the square error G(Θ_n;T_n)
+3. Apply the Stochastic Gradient Descent step at T_n by
+            Θ_n+1 = Θ_n - N_n * ∆_Θ * G(Θ_n, T_n)
+4. Repeat step 3 until G(Θ_n;t_n) meets the convergence condition.
+
