@@ -75,7 +75,7 @@ def plot_3d_(solver,domain_bound,time_point,fixed_coord_dim, fixed_coord_val):
     Plots 3D Solution against the analystic solution at various times
     """
 
-    if solver.spatial_dim != 3:
+    if solver.spatial_dimension != 3:
         raise ValueError('Only 3D Spatial Dimension supported')
 
     plot_dims = [i for i in range(3) if i != fixed_coord_dim]
@@ -109,8 +109,9 @@ def plot_3d_(solver,domain_bound,time_point,fixed_coord_dim, fixed_coord_val):
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(var1_mesh, var2_mesh, U_pred, cmap='viridis',edgecolor='k')
 
-    ax.set_xlabel(['Spatial Coordinates [x] [y] [z]'][plot_dims[0]])
-    ax.set_ylabel(['Spatial Coordinates [x] [y] [z]'][plot_dims[1]])
+    coord_names = ['x', 'y', 'z']
+    ax.set_xlabel(f'Spatial Coordinates [{coord_names[plot_dims[0]]}]')
+    ax.set_ylabel(f'Spatial Coordinates [{coord_names[plot_dims[1]]}]')
     ax.set_zlabel('u')
     ax.set_title(f'3d Solution at t={time_point:.2f}\n Fixed{['x','y','z'][fixed_coord_dim]}={fixed_coord_val:.2f}')
     ax.view_init(elev=20, azim=60)

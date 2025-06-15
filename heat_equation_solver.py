@@ -6,6 +6,7 @@ from heat_equation import HeatEquation
 
 
 if __name__ == '__main__':
+    """
     print("1D Heat Equation Example")
     spatial_dim_1d = 1
     alpha_1D = 0.01 # Thermal Diffusivity
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     visualize.plot_2d_(solver_2D, domain_bound_2D, time_point=0.01)
     visualize.plot_2d_(solver_2D, domain_bound_2D, time_point=0.1)
     visualize.plot_2d_(solver_2D, domain_bound_2D, time_point=T_end_2d)
-
+    """
 
     print("3D Heat Equation Example")
 
@@ -68,8 +69,8 @@ if __name__ == '__main__':
     lx_3D, ly_3D, lz_3D = 1.0,1.0, 1.0
     T_end_3D = 0.5
 
-    domain_bound_3D = [[0.0,lx_2d],[0.0,ly_2d],[0.0,lz_3D]]
-    time_bound_3D = [0.0,T_end_2d]
+    domain_bound_3D = [[0.0,lx_3D],[0.0,ly_3D],[0.0,lz_3D]]
+    time_bound_3D = [0.0,T_end_3D]
 
     layer_sizes_3D = [64,64,64,64, 1]
 
