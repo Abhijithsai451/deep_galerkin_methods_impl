@@ -5,11 +5,31 @@ from torch import device
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 
-def initial_condition(spatial_coord):
-    x = spatial_coord[:,0:1]
-    return torch.sin(torch.pi*x)
+def initial_condition(spatial_coord, spatial_dimension, domain_bound):
+    lx = domain_bound[0][1] - domain_bound[0][0]
+    if spatial_dimension > 1:
+        ly = domain_bound[1][1] - domain_bound[1][0]
+    if spatial_dimension > 2:
+        lz = domain_bound[2][1] - domain_bound[2][0]
 
-def boundary_condition(spatial_coord, t):
+    if spatial_dimension == 1:
+        x = spatial_coord[:,0:1]
+        return torch.sin(torch.pi*x)
+    elif spatial_dimension == 2:
+        x = spatial_coord[:,0:1]
+        y = spatial_coord[:,1:2]
+        return torch.exp(-((x - lx / 2) ** 2 + (y - ly / 2) ** 2) / 0.05)
+    elif spatial_dimension == 3:
+        x = spatial_coord[:,0:1]
+        y = spatial_coord[:,1:2]
+        z = spatial_coord[:,2:3]
+
+        return torch.exp(-((x - lx / 2) ** 2 + (y - ly / 2) ** 2 + (z - lz / 2) ** 2) / 0.05)
+    else:
+        raise ValueError(f"Unsupported spatial dimension: {spatial_dimension}."
+                         "This function is only implemented for 2D or 3D.")
+
+def boundary_condition(t):
     return torch.zeros_like(t)
 
 def generate_random_points(num_points, bounds):
@@ -28,10 +48,10 @@ def generate_pde_points(num_points, domain_bound, time_bound):
 
     return spatial_coords, t
 
-def generate_ic_points(num_points, domain_bound):
+def generate_ic_points(num_points, domain_bound,spatial_dimension):
     # Generates the random spatial points for initial conditions at t = time_bound[0]
     spatial_coords = generate_random_points(num_points, domain_bound)
-    u0_ic = initial_condition(spatial_coords.cpu()).to(device)
+    u0_ic = initial_condition(spatial_coords.cpu(),spatial_dimension,domain_bound).to(device)
     return spatial_coords, u0_ic
 
 
@@ -67,7 +87,7 @@ def generate_bc_points(num_points, domain_bound, time_bound, spatial_dimension):
                 coord_min_face.append(torch.ones((points_per_face,1),dtype=torch.float32) * domain_bound[i][0])
             else:
                 coord_min_face.append(torch.rand((points_per_face,1),dtype=torch.float32) *
-                                      (domain_bound[i][1]-domain_bound[i][0])+ domain_bound[i][0])
+                                      (domain_bound[i][1]-domain_bound[i][0]) + domain_bound[i][0])
         all_x_bc.append(torch.cat(coord_min_face, dim =1))
         all_t_bc.append(torch.rand((points_per_face,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0])
 
@@ -80,12 +100,12 @@ def generate_bc_points(num_points, domain_bound, time_bound, spatial_dimension):
                 coord_max_face.append(torch.rand((points_per_face,1),dtype=torch.float32) *(domain_bound[i][1]-domain_bound[i][0])
                                       +domain_bound[i][0])
         all_x_bc.append(torch.cat(coord_max_face, dim =1))
-        all_x_bc.append(torch.rand((points_per_face,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0])
+        all_t_bc.append(torch.rand((points_per_face,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0])
 
     X_bc = torch.cat(all_x_bc, dim =0).to(device)
     T_bc = torch.cat(all_t_bc, dim =0).to(device)
 
-    if X_bc.shape[0] <num_points:
+    if X_bc.shape[0] < num_points:
         remaining_points = num_points - X_bc.shape[0]
         X_extra = generate_random_points(remaining_points, domain_bound)
         T_extra = (torch.rand((remaining_points,1),dtype=torch.float32) *(time_bound[1]-time_bound[0])+ time_bound[0]).to(device)
@@ -96,9 +116,10 @@ def generate_bc_points(num_points, domain_bound, time_bound, spatial_dimension):
         X_bc = X_bc[:num_points]
         T_bc = T_bc[:num_points]
 
-    U_bc = boundary_condition(X_bc.cpu(), T_bc.cpu()).to(device)
+    U_bc = boundary_condition(T_bc.cpu()).to(device)
 
     return X_bc, T_bc, U_bc
+
 def analytic_func(x,t, alpha):
     soln = np.exp(-alpha * np.pi**2 * t)*np.sin(np.pi*x)
     return soln

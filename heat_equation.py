@@ -45,7 +45,7 @@ class HeatEquation:
         """
         spatial_coord = spatial_coord.to(self.device)
         time_coord = time_coord.to(self.device)
-        input_tensor = torch.cat((spatial_coord, time_coord), dim = 1)
+        input_tensor = torch.cat([spatial_coord, time_coord], dim = 1)
 
         return self.model(input_tensor)
 
@@ -62,19 +62,22 @@ class HeatEquation:
         time_coord.requires_grad_(True)
 
         u = self.predict(spatial_coord, time_coord)
-        # Computing the First derivative with respect to time
+        # 1. Computing the First derivative with respect to time (du/dt)
         u_t = torch.autograd.grad(u,time_coord, grad_outputs=torch.ones_like(u),create_graph=True)[0]
 
-        # Computing the second derivative with respect to spacial coordinates (x_i) as per the dimensions
+        # 2. Compute the Laplasian
+        du_dx_all = torch.autograd.grad(u, spatial_coord,
+                                       grad_outputs=torch.ones_like(u),create_graph=True,retain_graph=True)[0]
+
         u_xx_sum = 0.0
         for i in range(self.spatial_dimension):
-            coord_i = spatial_coord[:, i:i+1]
+            u_x_i = du_dx_all[:, i:i+1]
 
-            # Compute 1st derivative wrt x_i (du/dx_i)
-            u_i = torch.autograd.grad(u, coord_i, grad_outputs=torch.ones_like(u), create_graph=True,
+            # Computing 2nd derivative wrt x_i (du/dx_i)
+            du_dxx_all = torch.autograd.grad(u_x_i, spatial_coord, grad_outputs=torch.ones_like(u_x_i), create_graph=True,
                                       retain_graph=True)[0]
             # Compute 2nd derivative with respect to x_i (d2u/dx_i^2)
-            u_ii = torch.autograd.grad(u_i, coord_i, grad_outputs=torch.ones_like(u_i), create_graph=True)[0]
+            u_ii = du_dxx_all[:, i:i+1]
 
             u_xx_sum += u_ii
 
@@ -132,7 +135,7 @@ class HeatEquation:
         :param epochs: Number of training epochs
         :param learning_rate: Hyper Parameter
         """
-
+        print("[DEBUG] - Training ")
         self.domain_bounds = domain_bound
         self.time_bounds = time_bound
 
@@ -141,7 +144,7 @@ class HeatEquation:
         print(f"\n--- Training DGM for {self.spatial_dimension}D Heat Equation on {self.device} ---")
         for epoch in range(epochs):
             x_pde , t_pde = generate_pde_points(num_pde_points,domain_bound,time_bound)
-            x_ic , u0_ic = generate_ic_points(num_ic_points,domain_bound)
+            x_ic , u0_ic = generate_ic_points(num_ic_points,domain_bound,self.spatial_dimension)
             x_bc, t_bc, u_bc = generate_bc_points(num_bc_points,domain_bound,time_bound,self.spatial_dimension)
 
             optimizer.zero_grad()
