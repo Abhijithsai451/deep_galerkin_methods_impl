@@ -1,119 +1,108 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
-
-import sampling
-
-
-def plot_1d_(solver, alpha, domain_bound,time_bound):
-    """
-    plots 1D Solution against the analystic solution at various times
-    """
-
-    x_test = np.linspace(domain_bound[0][0],domain_bound[0][1],100)[:, None]
-    t_test = np.linspace(time_bound[0],time_bound[1],5)[:, None]
-
-    plt.figure(figsize=(10,6))
-    plt.title("Deep Galerkin Solution vs Analytic Solution")
-    plt.xlabel("Spatial Coordinates [x]")
-    # u--> Temperature (Heat)
-    plt.ylabel("Solution [u]")
-
-    for i, t_val in enumerate(t_test):
-        x_tensor = torch.tensor(x_test,dtype=torch.float32)
-        t_tensor = torch.full_like(x_tensor,float(t_val),dtype=torch.float32)
+from matplotlib import pyplot as plt
 
 
-        solver.model.eval()
-        with torch.no_grad():
-            predict = solver.predict(x_tensor,t_tensor).cpu().numpy()
-        solver.model.train()
+def plot_1d_solution_elliptic(solver_instance, domain_bounds, analytical_solution_func=None, plot_params=None):
+    """Plots the 1D solution for elliptic PDEs."""
+    if plot_params is None:
+        plot_params = {}
 
-        u_analytic = sampling.analytic_func(x_tensor,t_tensor, alpha)
-        plt.plot(x_test, predict, label=f'DGM (t={t_val[0]:.2f})',linestyle='-')
-        plt.plot(x_test,u_analytic, label=f'Analytic (t={t_val[0]:.2f})',linestyle='--')
+    num_points = 200
+    x_np = np.linspace(domain_bounds[0][0], domain_bounds[0][1], num_points).reshape(-1, 1)
+    x_torch = torch.from_numpy(x_np).float().to(solver_instance.device)
 
-    plt.legend(bbox_to_anchor=(1.05,1), loc='upper left')
+    # For plotting elliptic (steady-state), time is 0
+    t_dummy = torch.zeros_like(x_torch[:, 0:1]).to(solver_instance.device)
+
+    solver_instance.model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        u_pred_torch = solver_instance.predict(x_torch, t_dummy)
+    u_pred_np = u_pred_torch.cpu().numpy()
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(x_np, u_pred_np, label='DGM Solution', color='blue')
+
+    if analytical_solution_func:
+        u_analytical_np = analytical_solution_func(x_np, {})
+        plt.plot(x_np, u_analytical_np, label='Analytical Solution', linestyle='--', color='red')
+
+    plt.title(plot_params.get('title', "1D Elliptic PDE Solution"))
+    plt.xlabel("x")
+    plt.ylabel("u(x)")
+    plt.legend()
     plt.grid(True)
-    plt.tight_layout()
     plt.show()
 
-def plot_2d_(solver, domain_bound,time_point):
-    """
-    plots 2D Solution against the analystic solution at a specific time
-    """
-    nx, ny = 100,100
-    x_np = np.linspace(domain_bound[0][0],domain_bound[0][1],nx)
-    y_np = np.linspace(domain_bound[1][0],domain_bound[1][1],ny)
-    X_mesh, Y_mesh = np.meshgrid(x_np, y_np)
 
-    #Flatten grid for network input (N,2)
-    Spatial_coords_flat_np = np.vstack([X_mesh.ravel(), Y_mesh.ravel()]).T
-    t_flat_np = np.full((nx * ny,1), time_point)
+def plot_2d_solution_elliptic(solver_instance, domain_bounds, title="2D Elliptic PDE Solution"):
+    """Plots the 2D solution for elliptic PDEs."""
+    num_points = 50
+    x_coords = np.linspace(domain_bounds[0][0], domain_bounds[0][1], num_points)
+    y_coords = np.linspace(domain_bounds[1][0], domain_bounds[1][1], num_points)
+    X, Y = np.meshgrid(x_coords, y_coords)
 
-    Spatial_coords_flat_tensor = torch.tensor(Spatial_coords_flat_np,dtype=torch.float32).to(solver.device)
-    t_flat_tensor = torch.tensor(t_flat_np,dtype=torch.float32).to(solver.device)
+    coords_flat_np = np.hstack((X.reshape(-1, 1), Y.reshape(-1, 1)))
+    coords_flat_torch = torch.from_numpy(coords_flat_np).float().to(solver_instance.device)
 
-    solver.model.eval()
+    # For plotting elliptic (steady-state), time is 0
+    t_dummy = torch.zeros_like(coords_flat_torch[:, 0:1]).to(solver_instance.device)
+
+    solver_instance.model.eval()  # Set model to evaluation mode
     with torch.no_grad():
-        predict = solver.predict(Spatial_coords_flat_tensor,t_flat_tensor)
-    solver.model.train()
-    predict_np = predict.cpu().detach().numpy()
-    U_pred = predict_np.reshape(nx , ny)
+        u_pred_flat = solver_instance.predict(coords_flat_torch, t_dummy).cpu().numpy()
 
-    plt.figure(figsize=(10,6))
-    contour = plt.contour(X_mesh, Y_mesh, U_pred,levels = 50)
-    plt.colorbar(contour,label = 'u')
-    plt.xlabel('Spatial Coordinates [x]')
-    plt.ylabel('y')
-    plt.axis('equal')
-    plt.tight_layout()
-    plt.show()
+    U_pred = u_pred_flat.reshape(num_points, num_points)
 
-def plot_3d_(solver,domain_bound,time_point,fixed_coord_dim, fixed_coord_val):
-    """
-    Plots 3D Solution against the analystic solution at various times
-    """
-
-    if solver.spatial_dimension != 3:
-        raise ValueError('Only 3D Spatial Dimension supported')
-
-    plot_dims = [i for i in range(3) if i != fixed_coord_dim]
-
-    n_points_slice = 40
-    var1_val = np.linspace(domain_bound[0][0],domain_bound[0][1],n_points_slice)
-    var2_val = np.linspace(domain_bound[1][0],domain_bound[1][1],n_points_slice)
-    var1_mesh, var2_mesh = np.meshgrid(var1_val, var2_val)
-
-    spatial_coord_flat_np = np.zeros((n_points_slice * n_points_slice,3))
-
-    spatial_coord_flat_np[:,plot_dims[0]] = var1_mesh.ravel()
-    spatial_coord_flat_np[:,plot_dims[1]] = var2_mesh.ravel()
-
-    spatial_coord_flat_np[:fixed_coord_dim] = fixed_coord_val
-
-    t_flat_np = np.full((n_points_slice * n_points_slice,1),time_point)
-
-    spatial_coord_flat_tensor = torch.tensor(spatial_coord_flat_np,dtype=torch.float32).to(solver.device)
-    t_flat_tensor = torch.tensor(t_flat_np,dtype=torch.float32).to(solver.device)
-
-    solver.model.eval()
-    with torch.no_grad():
-        predict = solver.predict(spatial_coord_flat_tensor,t_flat_tensor)
-    solver.model.train()
-
-    predict_np = predict.cpu().detach().numpy()
-    U_pred = predict_np.reshape(n_points_slice, n_points_slice)
-
-    fig = plt.figure(figsize=(10,8))
+    fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(var1_mesh, var2_mesh, U_pred, cmap='viridis',edgecolor='k')
+    surf = ax.plot_surface(X, Y, U_pred, cmap='viridis', edgecolor='none')
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+    ax.set_title(title)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('u(x,y)')
+    plt.show()
 
-    coord_names = ['x', 'y', 'z']
-    ax.set_xlabel(f'Spatial Coordinates [{coord_names[plot_dims[0]]}]')
-    ax.set_ylabel(f'Spatial Coordinates [{coord_names[plot_dims[1]]}]')
+
+def plot_3d_slice_elliptic(solver_instance, fixed_coord_dim, fixed_coord_val, domain_bounds,
+                           title="3D Elliptic PDE Slice"):
+    """Plots a 2D slice of a 3D elliptic PDE solution."""
+    if solver_instance.spatial_dimension != 3:
+        print("This function is for 3D solutions only.")
+        return
+
+    varying_dims = [i for i in range(3) if i != fixed_coord_dim]
+
+    num_points = 50
+    coord1_vals = np.linspace(domain_bounds[varying_dims[0]][0], domain_bounds[varying_dims[0]][1], num_points)
+    coord2_vals = np.linspace(domain_bounds[varying_dims[1]][0], domain_bounds[varying_dims[1]][1], num_points)
+
+    C1, C2 = np.meshgrid(coord1_vals, coord2_vals)
+
+    coords_flat_np = np.zeros((num_points * num_points, 3))
+    coords_flat_np[:, varying_dims[0]] = C1.flatten()
+    coords_flat_np[:, varying_dims[1]] = C2.flatten()
+    coords_flat_np[:, fixed_coord_dim] = fixed_coord_val
+
+    coords_flat_torch = torch.from_numpy(coords_flat_np).float().to(solver_instance.device)
+
+    # For plotting elliptic (steady-state), time is 0
+    t_dummy = torch.zeros_like(coords_flat_torch[:, 0:1]).to(solver_instance.device)
+
+    solver_instance.model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        u_pred_flat = solver_instance.predict(coords_flat_torch, t_dummy).cpu().numpy()
+
+    U_pred_slice = u_pred_flat.reshape(num_points, num_points)
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(C1, C2, U_pred_slice, cmap='viridis', edgecolor='none')
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+
+    ax.set_title(f"{title}\n(Fixed {['X', 'Y', 'Z'][fixed_coord_dim]}={fixed_coord_val:.2f})")
+    ax.set_xlabel(['X', 'Y', 'Z'][varying_dims[0]])
+    ax.set_ylabel(['X', 'Y', 'Z'][varying_dims[1]])
     ax.set_zlabel('u')
-    ax.set_title(f'3d Solution at t={time_point:.2f}\n Fixed{['x','y','z'][fixed_coord_dim]}={fixed_coord_val:.2f}')
-    ax.view_init(elev=20, azim=60)
-    plt.tight_layout()
     plt.show()

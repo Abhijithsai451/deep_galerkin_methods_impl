@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 import visualize
-from heat_equation import HeatEquation
+
 
 
 if __name__ == '__main__':
