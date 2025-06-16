@@ -63,7 +63,7 @@ class DGM_Solver_Generalized:
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
         # --- Training Loop ---
-        print(f'\n --- Training Loop for DGM for spatial dimension {self.spatial_dimension} pde on {self.device}')
+        print(f'\n --- Training Loop for DGM for {self.spatial_dimension} spatial dimensional pde on {self.device}')
 
         for epoch in range(epochs):
             self.model.train()
@@ -90,4 +90,5 @@ class DGM_Solver_Generalized:
                     f"Epoch {epoch}/{epochs}: Total Loss={total_loss.item():.4e}, PDE Loss={loss_pde.item():.4e}, "
                     f"BC Loss={loss_bc.item():.4e}, IC Loss={loss_ic.item():.4e}")
         print("Training complete.")
+
 

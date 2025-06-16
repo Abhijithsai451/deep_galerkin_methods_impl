@@ -25,7 +25,7 @@ def calculate_laplacian(predict, spatial_dims, spatial_coord, time_coord):
         # compute the 2nd derivative wrt x_i (d2u/dx_i^2)
         u_ii = torch.autograd.grad(u_x_i,spatial_coord,grad_outputs=torch.ones_like(u_x_i),create_graph=True)[0][:, i:i+1]
 
-        u_xx_sum = u_xx_sum
+        u_xx_sum = u_xx_sum + u_ii
 
     return u_t, u_xx_sum
 
@@ -38,7 +38,7 @@ def heat_equation_residual(solver, spatial_coord, time_coord, **pde_params):
     """
 
     alpha = pde_params['alpha']
-    u_t , laplacian_u = calculate_laplacian(solver.predict, solver.spatial_dims, spatial_coord, time_coord)
+    u_t , laplacian_u = calculate_laplacian(solver.predict, solver.spatial_dimension, spatial_coord, time_coord)
 
     # Assuming the Heat Equation: du/dt - alpha * Laplacian(u) = 0
     heat_equation_residual = u_t - alpha * laplacian_u
