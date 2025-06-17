@@ -1,5 +1,3 @@
-import torch
-import numpy as np
 from  DGM_Solver_Generalized import DGM_Solver_Generalized
 from pde_residuals import *
 from utility_functions import *
@@ -19,12 +17,12 @@ if __name__ == "__main__":
     poisson_pde_params_1d = {'f_func': f_func_1d}
     num_pde_points = 5000
     num_bc_points = 1000
-    epochs = 50
+    epochs = 5000
     learning_rate = 1e-2
     layer_sizes = [32,32,32]
 
     poisson_solver = DGM_Solver_Generalized(spatial_dim_1d,layer_sizes)
-    print("Created the Neural Model for 1D Poisson Equation ")
+    print("Created the Deep Galerkin Neural Model for 1D Poisson Equation ")
 
     poisson_solver.train(pde_residual_func = poisson_equation_residual,
                          pde_parameters = poisson_pde_params_1d,
@@ -55,7 +53,7 @@ if __name__ == "__main__":
 
 
     poisson_solver_2d = DGM_Solver_Generalized(spatial_dim_2d, layer_sizes=layer_sizes)
-    print("Created the Neural Model for 2D Poisson Equation ")
+    print("Created the Deep Galerkin Neural Model for 2D Poisson Equation ")
 
     poisson_solver_2d.train(pde_residual_func=poisson_equation_residual,
                                 pde_parameters=poisson_pde_params_2d,
@@ -83,7 +81,7 @@ if __name__ == "__main__":
     poisson_pde_params_3d = {'f_func': f_func_3d}
 
     poisson_solver_3d = DGM_Solver_Generalized(spatial_dim_3d, layer_sizes=layer_sizes)
-    print("Created the Neural Model for 3D Poisson Equation ")
+    print("Created the Deep Galerkin Neural Model for 3D Poisson Equation ")
 
     poisson_solver_3d.train(pde_residual_func=poisson_equation_residual,
                                 pde_parameters=poisson_pde_params_3d,
