@@ -62,3 +62,25 @@ def poisson_equation_residual(solver, spatial_coord, time_coord, **pde_params):
 
     poisson_equation_residual = laplacian_u - f_val
     return poisson_equation_residual
+
+#
+def poisson_energy_functional(u_pred: torch.Tensor, grad_u_spatial: torch.Tensor,
+                                                x: torch.Tensor, params: dict) -> torch.Tensor:
+    """
+    Defines the integrand of the energy
+    u_pred: Predicted Solution value u(x) . (N-1)
+    grad_u_spatial: grad of u wrt spatial coordinates. (N, spatial_dimension)
+    x: Spatial Coordinates (N, spatial_dimension)
+    params: contains callable parameters in the form of Dictionary
+    """
+
+    f_func = params.get('f_func')
+    if f_func is None:
+        raise ValueError("Poisson energy functional parameters must include 'f_func' for the source term.")
+
+    grad_u_squared = torch.sum(grad_u_spatial ** 2, dim=1, keepdim=True)
+    source_f = f_func(x)
+
+    integrand = 0.5 * grad_u_squared + source_f * u_pred
+
+    return integrand

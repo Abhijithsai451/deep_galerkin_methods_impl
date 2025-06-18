@@ -3,7 +3,12 @@ import torch
 
 from sampling import device
 
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+def get_device():
+    if torch.backends.mps.is_available(): # For Apple Silicon GPUs
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")
+
 # <<<<<--------- All Utility Functions for 1D poissons equations
 def f_func_1d(x_coords):
     return -2.0 * torch.ones_like(x_coords[:, 0:1])
@@ -52,9 +57,14 @@ def f_func_3d(coords):
 def bc_3d_poisson(spatial_coord,lx_1d):
     return torch.zeros_like(spatial_coord[:, 0:1])
 
+def analytical_solution_3d_poisson(x, y, z,pde_params):
+    """
+    Calculates the Analytical Solution for the 3D Poisson Equations
+    Equation: u(x,y,z) = -x^2 + 2x - y^2 + 2y - z^2 + 2z
+    """
+    u_analytical = -x**2 + 2 * x - y**2 + 2 * y + z**2 + z
 
-
-
+    return u_analytical
 
 #<<<<<<--------- All Utility Functions for 1D Heat equations
 def bc_1d_heat(spatial_coord, random_variable) :

@@ -1,9 +1,10 @@
 import torch
 from torch import nn
+
 from sampling import *
 from NeuralNetwork import NeuralNetwork
 
-class DGM_Solver_Generalized:
+class DGM_Solver_Generalized():
     def __init__(self, spatial_dimension, layer_sizes, activation = nn.Tanh ):
 
         if spatial_dimension not in [1,2,3]:

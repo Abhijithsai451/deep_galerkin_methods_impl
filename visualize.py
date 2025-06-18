@@ -272,8 +272,7 @@ def plot_2d_solution_over_time_subplots(solver_instance, domain_bounds, time_sli
         print("No time slices provided for plotting.")
         return
 
-    # Determine grid size for subplots
-    cols = min(3, num_time_slices)  # Max 3 columns
+    cols = min(3, num_time_slices)
     rows = math.ceil(num_time_slices / cols)
 
     fig = plt.figure(figsize=(cols * 6, rows * 5))  # Adjust figure size based on subplot count
@@ -287,7 +286,7 @@ def plot_2d_solution_over_time_subplots(solver_instance, domain_bounds, time_sli
     coords_flat_np = np.hstack((X.reshape(-1, 1), Y.reshape(-1, 1)))
     coords_flat_torch = torch.from_numpy(coords_flat_np).float().to(solver_instance.device)
 
-    solver_instance.model.eval()  # Set model to evaluation mode
+    solver_instance.model.eval()
 
     for i, time_slice in enumerate(time_slices):
         ax = fig.add_subplot(rows, cols, i + 1, projection='3d')
@@ -299,16 +298,14 @@ def plot_2d_solution_over_time_subplots(solver_instance, domain_bounds, time_sli
         U_pred = u_pred_flat.reshape(num_points, num_points)
 
         surf = ax.plot_surface(X, Y, U_pred, cmap='viridis', edgecolor='none')
-        # fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5) # Colorbar per subplot can be messy, optional
-
         ax.set_title(f"t={time_slice:.2f}")
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('u')
         ax.tick_params(axis='both', which='major', labelsize=8)  # Smaller tick labels
-        ax.set_zticklabels([])  # Hide z-tick labels for cleaner look
+        ax.set_zticklabels([])
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout to make room for suptitle
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
 

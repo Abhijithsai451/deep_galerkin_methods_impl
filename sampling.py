@@ -4,34 +4,6 @@ from torch import device
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
-'''
-def initial_condition(spatial_coord, spatial_dimension, domain_bound):
-    lx = domain_bound[0][1] - domain_bound[0][0]
-    if spatial_dimension > 1:
-        ly = domain_bound[1][1] - domain_bound[1][0]
-    if spatial_dimension > 2:
-        lz = domain_bound[2][1] - domain_bound[2][0]
-
-    if spatial_dimension == 1:
-        x = spatial_coord[:,0:1]
-        return torch.sin(torch.pi*x)
-    elif spatial_dimension == 2:
-        x = spatial_coord[:,0:1]
-        y = spatial_coord[:,1:2]
-        return torch.exp(-((x - lx / 2) ** 2 + (y - ly / 2) ** 2) / 0.05)
-    elif spatial_dimension == 3:
-        x = spatial_coord[:,0:1]
-        y = spatial_coord[:,1:2]
-        z = spatial_coord[:,2:3]
-
-        return torch.exp(-((x - lx / 2) ** 2 + (y - ly / 2) ** 2 + (z - lz / 2) ** 2) / 0.05)
-    else:
-        raise ValueError(f"Unsupported spatial dimension: {spatial_dimension}."
-                         "This function is only implemented for 2D or 3D.")
-
-def boundary_condition(t):
-    return torch.zeros_like(t)
-'''
 def generate_random_points(num_points, bounds):
     # Generates random points
     points = []
