@@ -18,9 +18,9 @@ if __name__ == "__main__":
     poisson_pde_params_1d = {'f_func': f_func_1d}
     num_pde_points = 5000
     num_bc_points = 1000
-    epochs = 5000
-    learning_rate = 1e-2
-    layer_sizes = [32,32,32]
+    epochs = 35
+    learning_rate = 1e-3
+    layer_sizes = [32,32,32,32]
 
     poisson_solver = DRM_Solver_Generalized(spatial_dim_1d, layer_sizes)
     print("Created the Deep Ritz Neural Model for 1D Poisson Equation ")
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     print("Visualizing the Poisson Equation Solution in 1D")
     plot_1d_solution(poisson_solver, domain_bound_1d,
                      analytical_solution_func=analytical_solution_1d_poisson,
-                     plot_params={'title': "1D Poisson: DGM vs Analytical"})
+                     plot_params={'title': "1D Poisson: DRM vs Analytical"})
 
     # --- Example 2: 2D Poisson Equation ---
     print("\n" * 3 + "-" * 50 + "\n" * 3)  # Separator
@@ -46,13 +46,13 @@ if __name__ == "__main__":
     domain_bounds_2d = [[0.0, Lx_2d], [0.0, Ly_2d]]
     num_pde_points = 10000
     num_bc_points = 4000
-    epochs = 7500
+    epochs = 30000
     learning_rate = 1e-4
-    layer_sizes = [64, 64, 64, 63, 32]
+    layer_sizes = [64, 64, 64, 64, 32]
     poisson_pde_params_2d = {'f_func': f_func_2d}
 
     poisson_solver_2d = DRM_Solver_Generalized(spatial_dim_2d, layer_sizes=layer_sizes)
-    print("Created the Deep Galerkin Neural Model for 2D Poisson Equation ")
+    print("Created the Deep Ritz Neural Model for 2D Poisson Equation ")
 
     poisson_solver_2d.train(pde_residual_func=poisson_energy_functional,
                             pde_parameters=poisson_pde_params_2d,
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     print("Visualizing the Poisson Equation Solution in 2D")
     plot_2d_solution_surface(poisson_solver_2d, domain_bounds=domain_bounds_2d,
                              analytical_solution_func=analytical_solution_2d_poisson,
-                             plot_params={'title': "DGM Solution (2D Poisson Equation)"})
+                             plot_params={'title': "DRM Solution (2D Poisson Equation)"})
 
     time_slices = [0.0, 0.25, 0.5, 0.75, 1.0]
     plot_2d_solution_over_time_subplots(poisson_solver_2d, domain_bounds=domain_bounds_2d, time_slices=time_slices)
@@ -78,13 +78,13 @@ if __name__ == "__main__":
     domain_bounds_3d = [[0.0, Lx_3d], [0.0, Ly_3d], [0.0, Lz_3d]]
     num_pde_points = 15000
     num_bc_points = 6000
-    epochs = 3000
+    epochs = 40000
     learning_rate = 1e-3
-    layer_sizes = [64, 64, 64, 64]
+    layer_sizes = [128,128,128,128]
     poisson_pde_params_3d = {'f_func': f_func_3d}
 
     poisson_solver_3d = DRM_Solver_Generalized(spatial_dim_3d, layer_sizes=layer_sizes)
-    print("Created the Deep Galerkin Neural Model for 3D Poisson Equation ")
+    print("Created the Deep Ritz Neural Model for 3D Poisson Equation ")
 
     poisson_solver_3d.train(pde_residual_func=poisson_energy_functional,
                             pde_parameters=poisson_pde_params_3d,
@@ -95,11 +95,11 @@ if __name__ == "__main__":
 
     print("Visualizing the Poisson Equation Solution in 3D")
     plot_3d_solution_slice(poisson_solver_3d, fixed_coord_dim=2, fixed_coord_val=Lz_3d / 2,
-                           domain_bounds=domain_bounds_3d, title="DGM 3D Poisson Slice")
+                           domain_bounds=domain_bounds_3d, title="DRM 3D Poisson Slice")
     spatial_slices_3d_plot = [0.1, 0.25, 0.5, 0.75, 0.9]
     plot_3d_solution_spatial_slices_subplots(poisson_solver_3d, fixed_coord_dim=2,
                                              fixed_coord_vals=spatial_slices_3d_plot,
                                              domain_bounds=domain_bounds_3d,
-                                             plot_params={'main_title': "3D Poisson DGM Solution Slices along Z"})
+                                             plot_params={'main_title': "3D Poisson DRM Solution Slices along Z"})
 
 

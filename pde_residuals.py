@@ -79,8 +79,8 @@ def poisson_energy_functional(u_pred: torch.Tensor, grad_u_spatial: torch.Tensor
         raise ValueError("Poisson energy functional parameters must include 'f_func' for the source term.")
 
     grad_u_squared = torch.sum(grad_u_spatial ** 2, dim=1, keepdim=True)
-    source_term_f = f_func(x)
+    source_f = f_func(x)
 
-    integrand = 0.5 * grad_u_squared - source_term_f * u_pred
+    integrand = 0.5 * grad_u_squared + source_f * u_pred
 
     return integrand

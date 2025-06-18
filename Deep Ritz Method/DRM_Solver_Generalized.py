@@ -18,6 +18,7 @@ class DRM_Solver_Generalized():
         self.device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
         self.model.to(self.device)
         self.losses = {}
+        self.lambda_bc = 1000.0
         print(f'Using device: {self.device}')
 
     def predict(self,spatial_coords, time_coord):
@@ -42,7 +43,7 @@ class DRM_Solver_Generalized():
 
         return u_pred, grad_u_spatial
 
-    def _compute_bc_loss(self, boundary_condition_func: callable, x_bc: torch.Tensor) -> torch.Tensor:
+    def _compute_bc_loss(self, boundary_condition_func: callable, x_bc: torch.Tensor,domain_bound) -> torch.Tensor:
         """
         Computes the boundary condition loss (soft constraint) for DRM.
         """
@@ -52,14 +53,14 @@ class DRM_Solver_Generalized():
         X_all_bc = torch.cat([x_bc, t_zero], dim=1)
         u_pred_bc = self.model(X_all_bc)
 
-        u_bc_target = boundary_condition_func(x_bc)
+        u_bc_target = boundary_condition_func(x_bc,domain_bound[0][1])
 
         loss_bc = torch.mean((u_pred_bc - u_bc_target) ** 2)
         return loss_bc
 
-    def compute_loss(self, pde_residual_func: callable, pde_parameters: dict,
+    def compute_loss(self,domain_bound, pde_residual_func: callable, pde_parameters: dict,
                      X_pde, T_pde,
-                     X_bc, U_bc,
+                     X_bc, U_bc,boundary_condition_func
                      ) :
         """
         Computes the total loss for DRM by combining functional and BC losses.
@@ -72,10 +73,9 @@ class DRM_Solver_Generalized():
                             params=pde_parameters )
         loss_functional = torch.mean(integral_values)
 
-        u_pred_bc = self.predict(X_bc, torch.zeros_like(X_bc[:, 0:1]))
-        loss_bc = torch.mean((u_pred_bc - U_bc) ** 2)
+        loss_bc = self._compute_bc_loss(boundary_condition_func,X_bc,domain_bound)
 
-        total_loss = loss_functional + loss_bc
+        total_loss = loss_functional + self.lambda_bc * loss_bc
 
         loss_details = {'total': total_loss.item(), 'functional': loss_functional.item(),
                         'bc': loss_bc.item()}
@@ -99,10 +99,10 @@ class DRM_Solver_Generalized():
 
             optimizer.zero_grad()
 
-            total_loss, loss_details = self.compute_loss(
+            total_loss, loss_details = self.compute_loss(domain_bound,
                 pde_residual_func, pde_parameters,
                 x_pde, t_pde,
-                x_bc, u_bc,
+                x_bc, u_bc,boundary_condition_func
             )
             total_loss.backward()
             optimizer.step()
