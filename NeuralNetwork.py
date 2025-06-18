@@ -25,6 +25,14 @@ class NeuralNetwork(nn.Module):
 
         self.network = nn.Sequential(*layers)
 
+    def _initialize_weights(self):
+        """Custom weight initialization."""
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+
     def forward(self,input_tensor: torch.Tensor) -> torch.Tensor:
         # Input_tensor = Concatenated Spatial and Time Coordinates (N, Spatial_dim +1)
 
