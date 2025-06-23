@@ -1,6 +1,6 @@
 from pde_residuals import heat_equation_residual
 from utility_functions import *
-from  visualize import *
+from  visualize_bs import *
 from DGM_Solver_Generalized import DGM_Solver_Generalized
 
 # Setting Random Seed

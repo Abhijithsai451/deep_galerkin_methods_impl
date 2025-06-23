@@ -35,7 +35,6 @@ class NeuralNetwork(nn.Module):
 
     def forward(self,input_tensor: torch.Tensor) -> torch.Tensor:
         # Input_tensor = Concatenated Spatial and Time Coordinates (N, Spatial_dim +1)
-
         output_tensor = self.network(input_tensor)
         return output_tensor
 

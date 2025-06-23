@@ -1,7 +1,7 @@
 from  DGM_Solver_Generalized import DGM_Solver_Generalized
 from pde_residuals import *
 from utility_functions import *
-from visualize import *
+from visualize_bs import *
 
 
 # Setting Random Seed

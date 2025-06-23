@@ -4,7 +4,7 @@ import torch
 from  DRM_Solver_Generalized import DRM_Solver_Generalized
 from pde_residuals import *
 from utility_functions import *
-from visualize import *
+from visualize_bs import *
 
 torch.manual_seed(42)
 np.random.seed(42)
