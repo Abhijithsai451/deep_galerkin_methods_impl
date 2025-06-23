@@ -3,11 +3,11 @@ from torch import nn
 from tqdm import tqdm
 from NeuralNetwork import NeuralNetwork
 from utility_functions import get_device
-from sampling import generate_pde_points, generate_bc_points, generate_ic_points
+from sampling_bs import generate_pde_points_bs, generate_bc_points_bs, generate_ic_points_bs
 
 device = get_device()
 class BS_Solver_Generalized():
-    def __init__(self, spatial_dimension, layer_sizes, activation = nn.Tanh ):
+    def __init__(self, spatial_dimension, layer_sizes, activation = nn.ReLU ):
 
         if spatial_dimension not in [1,2,3]:
             raise ValueError("Spatial dimension must be 1 or 2 or 3")
@@ -105,7 +105,7 @@ class BS_Solver_Generalized():
               domain_bound: list,
               boundary_condition_func: callable,
               num_pde_points: int, num_bc_points: int,
-              epochs: int, learning_rate: float,lambda_bc: float, lambda_ic: float = 0.0,
+              epochs: int, learning_rate: float,lambda_bc: float, lambda_ic: float,
               initial_condition_func: callable = None, num_ic_points: int = 0):
         self.domain_bound = domain_bound
 
@@ -120,19 +120,20 @@ class BS_Solver_Generalized():
         spatial_domain = self.domain_bound[:self.spatial_dimension]
         time_domain = self.domain_bound[-1] if self.time_dependent else None
 
-
+        print(f"Debug: lambda_bc = {lambda_bc}")
+        print(f"Debug: lambda_ic = {lambda_ic}")
         # --- Training Loop ---
         print(f'\n --- Training Loop for DGM for {self.spatial_dimension} spatial dimensional pde on {self.device}')
 
         for epoch in tqdm(range(epochs), desc = "Training Black Scholes Example:"):
             optimizer.zero_grad()
 
-            x_pde = generate_pde_points(num_pde_points, spatial_domain, time_domain)
-            x_bc = generate_bc_points(num_bc_points, spatial_domain, time_domain, self.spatial_dimension, self.time_dependent)
+            x_pde = generate_pde_points_bs(num_pde_points, spatial_domain, time_domain)
+            x_bc = generate_bc_points_bs(num_bc_points, spatial_domain, time_domain, self.spatial_dimension, self.time_dependent)
             x_ic = None
 
             if self.time_dependent:
-               x_ic = generate_ic_points(num_ic_points,domain_bound, spatial_domain)
+               x_ic = generate_ic_points_bs(num_ic_points,domain_bound, spatial_domain)
 
 
             loss_pde = self.compute_pde_loss(pde_residual_func, x_pde, pde_params={'params': pde_parameters})

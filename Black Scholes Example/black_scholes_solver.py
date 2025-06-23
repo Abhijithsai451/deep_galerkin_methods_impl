@@ -10,10 +10,11 @@ EPOCHS = 15000
 LR = 1e-4
 PDE_POINTS = 10000
 BC_POINTS = 2000
-IC_POINTS = 4000
+IC_POINTS = 2000
 LAMBDA_BC = 100
 LAMBDA_IC = 1000
 device = get_device()
+
 
 # 1 Dimensional Black Scholes Equation
 print("1 Dimensional Black Scholes Equation")
@@ -21,7 +22,7 @@ print("1 Dimensional Black Scholes Equation")
 s_min, s_max = 0.1, 200.0
 t_min, t_max = 0, T_exp_BS # Time Range (time elapsed)
 domain_bound = [[s_min, s_max],[t_max, t_min]]
-layer_sizes = [64,64,64,1]
+layer_sizes = [64,64,64,64,64,1]
 
 solver = BS_Solver_Generalized(spatial_dimension = 1,  layer_sizes = layer_sizes)
 
@@ -31,7 +32,7 @@ solver.train(pde_residual_func= black_scholes_pde_residual_1d, pde_parameters= p
               domain_bound = domain_bound,
               boundary_condition_func= black_scholes_boundary_condition_1d,
               num_pde_points = PDE_POINTS,num_bc_points = BC_POINTS,
-              epochs= EPOCHS, learning_rate=  LR,lambda_bc = LAMBDA_BC,
+              epochs= EPOCHS, learning_rate=  LR,lambda_bc = LAMBDA_BC,lambda_ic=LAMBDA_IC,
               initial_condition_func = black_scholes_initial_condition_1d, num_ic_points = IC_POINTS)
 
 plot_times = [0.0, T_exp_BS * 0.25, T_exp_BS * 0.5, T_exp_BS * 0.75, T_exp_BS]
@@ -60,7 +61,6 @@ for i, t_val in enumerate(plot_times):
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
 
-"""
 # 2 Dimensional Black Scholes Equation
 print("\n--- Running 2D Black-Scholes (DGM) ---")
 s1_min, s1_max = 0.1, 200.0
@@ -100,4 +100,3 @@ analytical_solution_2d = black_scholes_analytical_2d(s1_test_flat, s2_test_flat,
 # you'd need a true analytical solution for the specific 2D option.
 plot_2d_solution_surface(torch.cat([s1_test_flat, s2_test_flat], dim=1), dgm_solution_2d, analytical_solution_2d,
                          f"2D Black-Scholes (t={plot_t:.2f}) - DGM vs Placeholder Analytical", "S1", "S2")
-"""
