@@ -4,9 +4,9 @@ from black_scholes_trainer import BS_Solver_Generalized
 from black_scholes_pde_residuals import *
 import numpy as np
 from utility_functions import get_device
-from visualize import plot_2d_solution_surface
+from visualize_bs import plot_2d_solution_surface_bs
 
-EPOCHS = 15000
+EPOCHS = 15
 LR = 1e-4
 PDE_POINTS = 10000
 BC_POINTS = 2000
@@ -15,7 +15,7 @@ LAMBDA_BC = 100
 LAMBDA_IC = 1000
 device = get_device()
 
-
+"""
 # 1 Dimensional Black Scholes Equation
 print("1 Dimensional Black Scholes Equation")
 
@@ -60,7 +60,7 @@ for i, t_val in enumerate(plot_times):
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
-
+"""
 # 2 Dimensional Black Scholes Equation
 print("\n--- Running 2D Black-Scholes (DGM) ---")
 s1_min, s1_max = 0.1, 200.0
@@ -78,7 +78,7 @@ solver.train(pde_residual_func= black_scholes_pde_residual_2d, pde_parameters= p
               domain_bound = domain_bound,
               boundary_condition_func= lambda x_coords,t_coords:black_scholes_boundary_condition_2d(x_coords,t_coords),
               num_pde_points = PDE_POINTS * 4,num_bc_points = BC_POINTS * 4,
-              epochs= EPOCHS * 3, learning_rate=  LR * 0.5,lambda_bc = LAMBDA_BC * 10, lambda_ic = LAMBDA_IC * 20,
+              epochs= EPOCHS * 2, learning_rate=  LR * 0.5,lambda_bc = LAMBDA_BC * 10, lambda_ic = LAMBDA_IC * 20,
               initial_condition_func =lambda x_coords: black_scholes_initial_condition_2d(x_coords), num_ic_points = IC_POINTS)
 
 # Plotting for 2D Black-Scholes (surface plot at final time)
@@ -98,5 +98,5 @@ analytical_solution_2d = black_scholes_analytical_2d(s1_test_flat, s2_test_flat,
 
 # Note: analytical_solution_2d is a placeholder. For proper comparison,
 # you'd need a true analytical solution for the specific 2D option.
-plot_2d_solution_surface(torch.cat([s1_test_flat, s2_test_flat], dim=1), dgm_solution_2d, analytical_solution_2d,
+plot_2d_solution_surface_bs(torch.cat([s1_test_flat, s2_test_flat], dim=1), dgm_solution_2d, analytical_solution_2d,
                          f"2D Black-Scholes (t={plot_t:.2f}) - DGM vs Placeholder Analytical", "S1", "S2")
