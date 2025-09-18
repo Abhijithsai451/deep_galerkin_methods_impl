@@ -4,30 +4,32 @@ from sympy.vector import Laplacian
 
 def calculate_laplacian(predict, spatial_dims, spatial_coord, time_coord):
     """
-    Calculates the time drivetive du/dt and the laplacian (sum of partials of u)
+    Calculates the time derivative du/dt and the laplacian (sum of partials of u)
     """
     spatial_coord.requires_grad_(True)
     time_coord.requires_grad_(True)
 
-    u = predict(spatial_coord,time_coord)
+    u = predict(spatial_coord, time_coord)
 
     # 1. Computing the First Derivatives wrt time (du/dt)
-    u_t = torch.autograd.grad(u,time_coord,grad_outputs=torch.ones_like(u),create_graph=True)[0]
+    u_t = torch.autograd.grad(u, time_coord, grad_outputs=torch.ones_like(u), create_graph=True)[0]
 
     # 2. Computing the Second Derivatives or Laplacian
-    du_dx_all = torch.autograd.grad(u,spatial_coord,grad_outputs=torch.ones_like(u),create_graph=True)[0]
+    du_dx_all = torch.autograd.grad(u, spatial_coord, grad_outputs=torch.ones_like(u), create_graph=True)[0]
 
     u_xx_sum = torch.zeros_like(u)
     for i in range(spatial_dims):
         # Here we extract the gradient wrt the i-th spatial dimension
-        u_x_i = du_dx_all[:, i:i+1]
+        u_x_i = du_dx_all[:, i:i + 1]
 
         # compute the 2nd derivative wrt x_i (d2u/dx_i^2)
-        u_ii = torch.autograd.grad(u_x_i,spatial_coord,grad_outputs=torch.ones_like(u_x_i),create_graph=True)[0][:, i:i+1]
+        u_ii = torch.autograd.grad(u_x_i, spatial_coord, grad_outputs=torch.ones_like(u_x_i), create_graph=True)[0][:,
+               i:i + 1]
 
         u_xx_sum = u_xx_sum + u_ii
 
     return u_t, u_xx_sum
+
 
 def heat_equation_residual(solver, spatial_coord, time_coord, **pde_params):
     """
@@ -38,14 +40,15 @@ def heat_equation_residual(solver, spatial_coord, time_coord, **pde_params):
     """
 
     alpha = pde_params['alpha']
-    u_t , laplacian_u = calculate_laplacian(solver.predict, solver.spatial_dimension, spatial_coord, time_coord)
+    u_t, laplacian_u = calculate_laplacian(solver.predict, solver.spatial_dimension, spatial_coord, time_coord)
 
     # Assuming the Heat Equation: du/dt - alpha * Laplacian(u) = 0
-    heat_equation_residual = u_t - alpha * laplacian_u
+    residual = u_t - alpha * laplacian_u
 
     # If Souce term in available then the Heat equation will be equal to the source  q(x,t)
 
-    return heat_equation_residual
+    return residual
+
 
 def poisson_equation_residual(solver, spatial_coord, time_coord, **pde_params):
     """
@@ -60,12 +63,13 @@ def poisson_equation_residual(solver, spatial_coord, time_coord, **pde_params):
 
     f_val = pde_params['f_func'](spatial_coord)
 
-    poisson_equation_residual = laplacian_u - f_val
-    return poisson_equation_residual
+    residual = laplacian_u - f_val
+    return residual
+
 
 #
 def poisson_energy_functional(u_pred: torch.Tensor, grad_u_spatial: torch.Tensor,
-                                                x: torch.Tensor, params: dict) -> torch.Tensor:
+                              x: torch.Tensor, params: dict) -> torch.Tensor:
     """
     Defines the integrand of the energy
     u_pred: Predicted Solution value u(x) . (N-1)
