@@ -22,7 +22,7 @@ def plot_1d_solution(x_test: torch.Tensor, dgm_solution: torch.Tensor, analytica
     plt.show()
 
 
-def plot_2d_solution_surface(X_test: torch.Tensor, dgm_solution: torch.Tensor, analytical_solution: torch.Tensor,
+def plot_2d_solution_surface_bs(X_test: torch.Tensor, dgm_solution: torch.Tensor, analytical_solution: torch.Tensor,
                              title: str, xlabel: str, ylabel: str, save_path: str = None):
     """Plots 2D DGM vs Analytical solution as a surface."""
     fig = plt.figure(figsize=(12, 8))

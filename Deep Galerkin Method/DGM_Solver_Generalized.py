@@ -1,13 +1,13 @@
 import torch
 from torch import nn
-
 from sampling import *
 from NeuralNetwork import NeuralNetwork
 
-class DGM_Solver_Generalized():
-    def __init__(self, spatial_dimension, layer_sizes, activation = nn.Tanh ):
 
-        if spatial_dimension not in [1,2,3]:
+class DGM_Solver_Generalized():
+    def __init__(self, spatial_dimension, layer_sizes, activation=nn.Tanh):
+
+        if spatial_dimension not in [1, 2, 3]:
             raise ValueError("Spatial dimension must be 1 or 2 or 3")
         self.spatial_dimension = spatial_dimension
         input_features = spatial_dimension + 1
@@ -19,7 +19,7 @@ class DGM_Solver_Generalized():
 
         print(f'Using device: {self.device}')
 
-    def predict(self,spatial_coords, time_coord):
+    def predict(self, spatial_coords, time_coord):
         spatial_coords = spatial_coords.to(device)
         time_coord = time_coord.to(device)
 
@@ -36,7 +36,7 @@ class DGM_Solver_Generalized():
         loss we calculate using Mean Square Error
         """
 
-        pde_res = pde_residual_func(self,X_pde, T_pde, **pde_parameters)
+        pde_res = pde_residual_func(self, X_pde, T_pde, **pde_parameters)
         loss_pde = torch.mean(pde_res ** 2)
 
         u_pred_bc = self.predict(X_bc, torch.zeros_like(X_bc[:, 0:1]))
@@ -53,6 +53,7 @@ class DGM_Solver_Generalized():
     """def train(self, alpha, domain_bound, time_bound, num_pde_points, num_ic_points, num_bc_points, epochs, learning_rate,
               pde_residual_func: callable, pde_parameters: dict):
         """
+
     def train(self, pde_residual_func: callable, pde_parameters: dict,
               domain_bound: list,
               boundary_condition_func: callable,
@@ -70,14 +71,15 @@ class DGM_Solver_Generalized():
             self.model.train()
 
             x_pde, t_pde = generate_pde_points(num_pde_points, domain_bound)
-            x_bc, u_bc = generate_bc_points(num_bc_points, domain_bound,self.spatial_dimension, boundary_condition_func)
+            x_bc, u_bc = generate_bc_points(num_bc_points, domain_bound, self.spatial_dimension,
+                                            boundary_condition_func)
             x_ic, u_ic = None, None
             if initial_condition_func is not None and num_ic_points > 0:
                 x_ic, u_ic = generate_ic_points(num_ic_points)
 
             optimizer.zero_grad()
 
-            total_loss , loss_pde, loss_bc, loss_ic = self.compute_loss(
+            total_loss, loss_pde, loss_bc, loss_ic = self.compute_loss(
                 pde_residual_func, pde_parameters,
                 x_pde, t_pde,
                 x_bc, u_bc,
@@ -91,5 +93,3 @@ class DGM_Solver_Generalized():
                     f"Epoch {epoch}/{epochs}: Total Loss={total_loss.item():.4e}, PDE Loss={loss_pde.item():.4e}, "
                     f"BC Loss={loss_bc.item():.4e}, IC Loss={loss_ic.item():.4e}")
         print("Training complete.")
-
-

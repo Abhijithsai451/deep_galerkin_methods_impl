@@ -1,0 +1,7 @@
+Deep Galerkin Method Implementation
+
+1. Implement the Neural Network, Random Points Generators, Loss Functions, Train
+2. Implement the plots 1D and 2D
+3. Use scikit-fem to generate the solution to the problem in 1D and 2D
+4. Compare the solutions using the visualize.
+5. Repeat for the first order and second order PDEs.

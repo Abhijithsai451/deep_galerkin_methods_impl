@@ -1,0 +1,120 @@
+{
+  "1D_POISSON": {
+    "spatial_dim": 1,
+    "lx": 1.0,
+    "domain_bound": [
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "pde_params": {
+      "f_func": "f_func_1d"
+    },
+    "num_pde_points": 5000,
+    "num_bc_points": 1000,
+    "epochs": 35,
+    "learning_rate": 0.001,
+    "layer_sizes": [
+      32,
+      32,
+      32,
+      32
+    ],
+    "boundary_condition_func": "bc_1d_poisson",
+    "analytical_solution_func": "analytical_solution_1d_poisson",
+    "plot_params": {
+      "title": "1D Poisson: DRM vs Analytical"
+    }
+  },
+  "2D_POISSON": {
+    "spatial_dim": 2,
+    "Lx": 1.0,
+    "Ly": 1.0,
+    "domain_bounds": [
+      [
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "num_pde_points": 10000,
+    "num_bc_points": 4000,
+    "epochs": 30000,
+    "learning_rate": 0.0001,
+    "layer_sizes": [
+      64,
+      64,
+      64,
+      64,
+      32
+    ],
+    "pde_params": {
+      "f_func": "f_func_2d"
+    },
+    "boundary_condition_func": "bc_2d_poisson",
+    "analytical_solution_func": "analytical_solution_2d_poisson",
+    "plot_params_surface": {
+      "title": "DRM Solution (2D Poisson Equation)"
+    },
+    "time_slices": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ]
+  },
+  "3D_POISSON": {
+    "spatial_dim": 3,
+    "Lx": 1.0,
+    "Ly": 1.0,
+    "Lz": 1.0,
+    "domain_bounds": [
+      [
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "num_pde_points": 15000,
+    "num_bc_points": 6000,
+    "epochs": 40000,
+    "learning_rate": 0.001,
+    "layer_sizes": [
+      128,
+      128,
+      128,
+      128
+    ],
+    "pde_params": {
+      "f_func": "f_func_3d"
+    },
+    "boundary_condition_func": "bc_3d_poisson",
+    "fixed_coord_dim": 2,
+    "fixed_coord_val": 0.5,
+    "plot_params_slice": {
+      "title": "DRM 3D Poisson Slice"
+    },
+    "spatial_slices_plot": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "plot_params_subplots": {
+      "main_title": "3D Poisson DRM Solution Slices along Z"
+    }
+  }
+}
